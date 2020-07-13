@@ -9,15 +9,17 @@
 
 #pragma comment( lib, "openxr_loader.lib" )
 
-XrInstance mInstance;
+// OpenXR instance
+XrInstance gInstance;
 
+#pragma region helper function for output
 bool xrWORK(const XrResult& rs)
 {
 	if (rs == XR_SUCCESS)
 		return true;
 
 	char sMsg[XR_MAX_RESULT_STRING_SIZE];
-	if(xrResultToString(mInstance, rs, sMsg) == XR_SUCCESS)
+	if(xrResultToString(gInstance, rs, sMsg) == XR_SUCCESS)
 		std::cout << "   => Error: " << sMsg << std::endl;
 	else
 		std::cout << "   => Error: " << rs << std::endl;
@@ -26,9 +28,9 @@ bool xrWORK(const XrResult& rs)
 
 std::string toString(const XrVersion& rVer)
 {
-	std::ostringstream oss;
-	oss << XR_VERSION_MAJOR(rVer) << "." << XR_VERSION_MINOR(rVer) << "." << XR_VERSION_PATCH(rVer);
-	return oss.str();
+	return	std::to_string(XR_VERSION_MAJOR(rVer)) + "." +
+			std::to_string(XR_VERSION_MINOR(rVer)) + "." +
+			std::to_string(XR_VERSION_PATCH(rVer));
 }
 
 std::string toString(const XrViewConfigurationType& rViewConfType)
@@ -68,6 +70,24 @@ std::string toString(const XrEnvironmentBlendMode& rMode)
 	return "Unknown Mode";
 }
 
+std::ostream& operator<<(std::ostream& oss, const XrApiLayerProperties& rAPI)
+{
+	oss << rAPI.layerName << " (ver " << toString(rAPI.specVersion) << "/" << rAPI.layerVersion << "): " << rAPI.description;
+	return oss;
+}
+
+std::ostream& operator<<(std::ostream& oss, const XrExtensionProperties& rExt)
+{
+	oss << rExt.extensionName << " (ver " << rExt.extensionVersion << ")";
+	return oss;
+}
+
+std::ostream& operator<<(std::ostream& oss, const XrInstanceProperties& rProp)
+{
+	oss << rProp.runtimeName << " (" << toString(rProp.runtimeVersion) << ")";
+	return oss;
+}
+
 std::ostream& operator<<(std::ostream& oss, const XrViewConfigurationView& rView)
 {
 	oss << rView.recommendedImageRectWidth << " * " << rView.recommendedImageRectHeight
@@ -75,6 +95,7 @@ std::ostream& operator<<(std::ostream& oss, const XrViewConfigurationView& rView
 		<< " [Swap chain: " << rView.recommendedSwapchainSampleCount << "(" << rView.maxSwapchainSampleCount << ")]";
 	return oss;
 }
+#pragma endregion
 
 int main(int argc, char** argv)
 {
@@ -86,7 +107,7 @@ int main(int argc, char** argv)
 		uint32_t uAPILayerNum = 0;
 		if (xrWORK(xrEnumerateApiLayerProperties(0, &uAPILayerNum, nullptr)))
 		{
-			std::cout << " > " << uAPILayerNum << std::endl;
+			std::cout << " > Found " << uAPILayerNum << " API layers\n";
 			if (uAPILayerNum > 0)
 			{
 				// enumrate and output API layer information
@@ -94,10 +115,11 @@ int main(int argc, char** argv)
 				if (xrWORK(xrEnumerateApiLayerProperties(uAPILayerNum, &uAPILayerNum, vAPIs.data())))
 				{
 					for (const auto& rAPI : vAPIs)
-						std::cout << "   - " << rAPI.layerName << " (" << toString(rAPI.specVersion) << "/" << rAPI.layerVersion << "): " << rAPI.description << "\n";
+						std::cout << "   - " << rAPI << "\n";
 				}
 			}
 		}
+		std::cout << "\n";
 	}
 	#pragma endregion
 
@@ -111,6 +133,7 @@ int main(int argc, char** argv)
 		if (!xrWORK(xrEnumerateInstanceExtensionProperties(nullptr, 0, &uExtensionNum, nullptr)))
 			return -1;
 
+		std::cout << " > Found " << uExtensionNum << " extensions\n";
 		if (uExtensionNum > 0)
 		{
 			// enumrate and output extension information
@@ -118,9 +141,10 @@ int main(int argc, char** argv)
 			if (xrWORK(xrEnumerateInstanceExtensionProperties(nullptr, uExtensionNum, &uExtensionNum, vExternsions.data())))
 			{
 				for (const auto& rExt : vExternsions)
-					std::cout << "  - " << rExt.extensionName << " (" << rExt.extensionVersion << ")\n";
+					std::cout << "  - " << rExt << "\n";
 			}
 		}
+		std::cout << "\n";
 	}
 	#pragma endregion
 
@@ -132,6 +156,7 @@ int main(int argc, char** argv)
 		// setup required extensions
 		std::vector<const char*> sExtensionList;
 		//sExtensionList.push_back(XR_KHR_OPENGL_ENABLE_EXTENSION_NAME);
+		sExtensionList.push_back("XR_KHR_D3D11_enable");
 
 		XrInstanceCreateInfo infoCreate;
 		infoCreate.type = XR_TYPE_INSTANCE_CREATE_INFO;
@@ -144,54 +169,67 @@ int main(int argc, char** argv)
 		infoCreate.enabledExtensionNames = sExtensionList.data();
 
 		std::cout << " > create instance" << std::endl;
-		if (!xrWORK(xrCreateInstance(&infoCreate, &mInstance)))
+		if (!xrWORK(xrCreateInstance(&infoCreate, &gInstance)))
 			return -1;
 
 		std::cout << " > get instance information" << std::endl;
 		XrInstanceProperties mProp;
-		if (xrWORK(xrGetInstanceProperties(mInstance, &mProp)))
-			std::cout << "   - " << mProp.runtimeName << " (" << toString(mProp.runtimeVersion) << ")\n";
+		if (xrWORK(xrGetInstanceProperties(gInstance, &mProp)))
+			std::cout << "   - " << mProp << "\n";
+
+		std::cout << "\n";
 	}
 	#pragma endregion
 
 	#pragma region OpenXR system
-	XrSystemId mSysId = XR_NULL_SYSTEM_ID;
+	std::vector<XrSystemId> vSysId;
 	{
-		std::cout << "Get system" << std::endl;
-		XrSystemGetInfo mSysGet;
-		mSysGet.type = XR_TYPE_SYSTEM_GET_INFO;
-		mSysGet.next = nullptr;
-		mSysGet.formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
+		std::cout << "Get systems" << std::endl;
 
-		if (xrWORK(xrGetSystem(mInstance, &mSysGet, &mSysId)))
+		std::vector<XrSystemGetInfo> vSysGet = {
+			{XR_TYPE_SYSTEM_GET_INFO, nullptr,XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY},
+			{XR_TYPE_SYSTEM_GET_INFO, nullptr,XR_FORM_FACTOR_HANDHELD_DISPLAY}
+		};
+
+		for (const auto& rGetInfo : vSysGet)
 		{
-			std::cout << " > get system information" << std::endl;
-			XrSystemProperties mSysProp;
-			if (xrWORK(xrGetSystemProperties(mInstance, mSysId, &mSysProp)))
+			std::cout << " > Try to get system " << rGetInfo.formFactor << "\n";
+
+			XrSystemId mSysId = XR_NULL_SYSTEM_ID;
+			if (xrWORK(xrGetSystem(gInstance, &rGetInfo, &mSysId)))
 			{
-				std::cout << "  - " << mSysProp.systemName << " (" << mSysProp.vendorId << ")\n";
-				std::cout << "    - Graphics: " << mSysProp.graphicsProperties.maxSwapchainImageWidth << " * " << mSysProp.graphicsProperties.maxSwapchainImageHeight << " with " << mSysProp.graphicsProperties.maxLayerCount << " layer\n";
-				std::cout << "    - Tracking:";
-				if (mSysProp.trackingProperties.positionTracking == XR_TRUE)
-					std::cout << " position";
-				if (mSysProp.trackingProperties.orientationTracking == XR_TRUE)
-					std::cout << " orientation";
-				std::cout << "\n";
+				vSysId.push_back(mSysId);
+				std::cout << "   > get system information" << std::endl;
+				XrSystemProperties mSysProp;
+				if (xrWORK(xrGetSystemProperties(gInstance, mSysId, &mSysProp)))
+				{
+					std::cout << "    - " << mSysProp.systemName << " (" << mSysProp.vendorId << ")\n";
+					std::cout << "     - Graphics: " << mSysProp.graphicsProperties.maxSwapchainImageWidth << " * " << mSysProp.graphicsProperties.maxSwapchainImageHeight << " with " << mSysProp.graphicsProperties.maxLayerCount << " layer\n";
+					std::cout << "     - Tracking:";
+					if (mSysProp.trackingProperties.positionTracking == XR_TRUE)
+						std::cout << " position";
+					if (mSysProp.trackingProperties.orientationTracking == XR_TRUE)
+						std::cout << " orientation";
+					std::cout << "\n";
+				}
 			}
 		}
+
+		std::cout << "\n";
 	}
 	#pragma endregion
 
 	#pragma region OpenXR View
+	for(const auto& mSysId : vSysId )
 	{
-		std::cout << "Enumerate View Configurations" << std::endl;
+		std::cout << "Enumerate View Configurations for system " << mSysId << std::endl;
 		uint32_t uViewConfNum = 0;
-		if (xrWORK(xrEnumerateViewConfigurations(mInstance, mSysId, 0, &uViewConfNum, nullptr )))
+		if (xrWORK(xrEnumerateViewConfigurations(gInstance, mSysId, 0, &uViewConfNum, nullptr )))
 		{
 			if(uViewConfNum > 0)
 			{
 				std::vector<XrViewConfigurationType> vViewConf(uViewConfNum);
-				if (xrWORK(xrEnumerateViewConfigurations(mInstance, mSysId, uViewConfNum, &uViewConfNum, vViewConf.data())))
+				if (xrWORK(xrEnumerateViewConfigurations(gInstance, mSysId, uViewConfNum, &uViewConfNum, vViewConf.data())))
 				{
 					for (const auto& rViewConfType : vViewConf)
 					{
@@ -199,7 +237,7 @@ int main(int argc, char** argv)
 
 						// get view configuration properties
 						XrViewConfigurationProperties mProp;
-						if (xrWORK(xrGetViewConfigurationProperties(mInstance, mSysId, rViewConfType, &mProp)))
+						if (xrWORK(xrGetViewConfigurationProperties(gInstance, mSysId, rViewConfType, &mProp)))
 						{
 							if (mProp.fovMutable)
 								std::cout << " ( FoV mutable)";
@@ -208,13 +246,13 @@ int main(int argc, char** argv)
 
 						// Views
 						uint32_t uViewsNum = 0;
-						if (xrWORK(xrEnumerateViewConfigurationViews(mInstance, mSysId, rViewConfType, 0, &uViewsNum, nullptr)))
+						if (xrWORK(xrEnumerateViewConfigurationViews(gInstance, mSysId, rViewConfType, 0, &uViewsNum, nullptr)))
 						{
 							if (uViewsNum > 0)
 							{
 								std::cout << "   > " << uViewsNum << " views:\n";
 								std::vector<XrViewConfigurationView> vViews(uViewsNum, { XR_TYPE_VIEW_CONFIGURATION_VIEW });
-								if (xrWORK(xrEnumerateViewConfigurationViews(mInstance, mSysId, rViewConfType, uViewsNum, &uViewsNum, vViews.data())))
+								if (xrWORK(xrEnumerateViewConfigurationViews(gInstance, mSysId, rViewConfType, uViewsNum, &uViewsNum, vViews.data())))
 								{
 									for (const auto& rView : vViews)
 										std::cout << "     - " << rView << "\n";
@@ -224,13 +262,13 @@ int main(int argc, char** argv)
 
 						// Blend Type
 						uint32_t uBlendModeNum = 0;
-						if (xrWORK(xrEnumerateEnvironmentBlendModes(mInstance, mSysId, rViewConfType, 0, &uBlendModeNum, nullptr)))
+						if (xrWORK(xrEnumerateEnvironmentBlendModes(gInstance, mSysId, rViewConfType, 0, &uBlendModeNum, nullptr)))
 						{
 							if (uBlendModeNum > 0)
 							{
 								std::cout << "   > " << uBlendModeNum << " blend modes:\n";
 								std::vector<XrEnvironmentBlendMode> vBlendMode(uBlendModeNum);
-								if (xrWORK(xrEnumerateEnvironmentBlendModes(mInstance, mSysId, rViewConfType, uBlendModeNum, &uBlendModeNum, vBlendMode.data())))
+								if (xrWORK(xrEnumerateEnvironmentBlendModes(gInstance, mSysId, rViewConfType, uBlendModeNum, &uBlendModeNum, vBlendMode.data())))
 								{
 									for (const auto& rMode : vBlendMode)
 										std::cout << "     - " << toString(rMode) << "\n";
@@ -241,11 +279,12 @@ int main(int argc, char** argv)
 				}
 			}
 		}
+		std::cout << "\n";
 	}
 	#pragma endregion
 
 	#pragma region Destroy Instance
-	xrWORK(xrDestroyInstance(mInstance));
+	xrWORK(xrDestroyInstance(gInstance));
 	#pragma endregion
 	return 0;
 }
