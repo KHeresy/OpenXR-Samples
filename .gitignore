@@ -1,3 +1,4 @@
 /.vs
+/openxr_loader_windows
 x64
 *.user

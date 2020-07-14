@@ -7,6 +7,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "basic_info", "basic_info\ba
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution files", "Solution files", "{BD3A4824-6954-4053-9BC1-9A459B0322B5}"
 	ProjectSection(SolutionItems) = preProject
+		3rdPartyLibs.ps1 = 3rdPartyLibs.ps1
 		README.md = README.md
 	EndProjectSection
 EndProject
