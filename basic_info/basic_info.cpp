@@ -181,7 +181,7 @@ int main(int argc, char** argv)
 			return -1;
 
 		std::cout << " > get instance information" << std::endl;
-		XrInstanceProperties mProp;
+		XrInstanceProperties mProp{ XR_TYPE_INSTANCE_PROPERTIES };
 		if (xrWORK(xrGetInstanceProperties(gInstance, &mProp)))
 			std::cout << "   - " << mProp << "\n";
 
@@ -208,7 +208,7 @@ int main(int argc, char** argv)
 			{
 				vSysId.push_back(mSysId);
 				std::cout << "   > get system information" << std::endl;
-				XrSystemProperties mSysProp;
+				XrSystemProperties mSysProp{ XR_TYPE_SYSTEM_GET_INFO };
 				if (xrWORK(xrGetSystemProperties(gInstance, mSysId, &mSysProp)))
 				{
 					std::cout << "    - " << mSysProp.systemName << " (" << mSysProp.vendorId << ")\n";
@@ -244,7 +244,7 @@ int main(int argc, char** argv)
 						std::cout << "  - " << toString(rViewConfType);
 
 						// get view configuration properties
-						XrViewConfigurationProperties mProp;
+						XrViewConfigurationProperties mProp{ XR_TYPE_VIEW_CONFIGURATION_PROPERTIES };
 						if (xrWORK(xrGetViewConfigurationProperties(gInstance, mSysId, rViewConfType, &mProp)))
 						{
 							if (mProp.fovMutable)
