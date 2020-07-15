@@ -2,10 +2,7 @@
 #include <vector>
 #include <sstream>
 
-#define XR_USE_GRAPHICS_API_OPENGL
-
 #include <openxr/openxr.h>
-#include <openxr/openxr_platform.h>
 
 #pragma comment( lib, "openxr_loader.lib" )
 
@@ -100,6 +97,7 @@ std::ostream& operator<<(std::ostream& oss, const XrViewConfigurationView& rView
 int main(int argc, char** argv)
 {
 	#pragma region API Layers information
+	std::vector<XrApiLayerProperties> vAPIs;
 	{
 		std::cout << "Try to get API Layers: " << std::endl;
 
@@ -111,7 +109,7 @@ int main(int argc, char** argv)
 			if (uAPILayerNum > 0)
 			{
 				// enumrate and output API layer information
-				std::vector<XrApiLayerProperties> vAPIs(uAPILayerNum, { XR_TYPE_API_LAYER_PROPERTIES });
+				vAPIs.resize(uAPILayerNum, { XR_TYPE_API_LAYER_PROPERTIES });
 				if (xrWORK(xrEnumerateApiLayerProperties(uAPILayerNum, &uAPILayerNum, vAPIs.data())))
 				{
 					for (const auto& rAPI : vAPIs)
@@ -137,10 +135,10 @@ int main(int argc, char** argv)
 		if (uExtensionNum > 0)
 		{
 			// enumrate and output extension information
-			std::vector<XrExtensionProperties> vExternsions(uExtensionNum, { XR_TYPE_EXTENSION_PROPERTIES });
-			if (xrWORK(xrEnumerateInstanceExtensionProperties(nullptr, uExtensionNum, &uExtensionNum, vExternsions.data())))
+			vSupportedExt.resize(uExtensionNum, { XR_TYPE_EXTENSION_PROPERTIES });
+			if (xrWORK(xrEnumerateInstanceExtensionProperties(nullptr, uExtensionNum, &uExtensionNum, vSupportedExt.data())))
 			{
-				for (const auto& rExt : vExternsions)
+				for (const auto& rExt : vSupportedExt)
 					std::cout << "  - " << rExt << "\n";
 			}
 		}
@@ -154,9 +152,19 @@ int main(int argc, char** argv)
 		std::cout << " > prepare instance create information" << std::endl;
 
 		// setup required extensions
-		std::vector<const char*> sExtensionList;
-		//sExtensionList.push_back(XR_KHR_OPENGL_ENABLE_EXTENSION_NAME);
-		sExtensionList.push_back("XR_KHR_D3D11_enable");
+		std::vector<const char*> vExtList;
+		auto addExtIfExist = [&vSupportedExt,&vExtList](const char* sExtName) {
+			for (const auto& rExt : vSupportedExt)
+			{
+				if (strcmp( rExt.extensionName, sExtName) == 0)
+				{
+					vExtList.push_back(sExtName);
+					return;
+				}
+			}
+		};
+		addExtIfExist("XR_KHR_opengl_enable");
+		addExtIfExist("XR_KHR_visibility_mask");
 
 		XrInstanceCreateInfo infoCreate;
 		infoCreate.type = XR_TYPE_INSTANCE_CREATE_INFO;
@@ -165,8 +173,8 @@ int main(int argc, char** argv)
 		infoCreate.applicationInfo = { "TestApp", 1, "TestEngine", 1, XR_CURRENT_API_VERSION };
 		infoCreate.enabledApiLayerCount = 0;
 		infoCreate.enabledApiLayerNames = {};
-		infoCreate.enabledExtensionCount = (uint32_t)sExtensionList.size();
-		infoCreate.enabledExtensionNames = sExtensionList.data();
+		infoCreate.enabledExtensionCount = (uint32_t)vExtList.size();
+		infoCreate.enabledExtensionNames = vExtList.data();
 
 		std::cout << " > create instance" << std::endl;
 		if (!xrWORK(xrCreateInstance(&infoCreate, &gInstance)))
