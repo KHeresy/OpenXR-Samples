@@ -89,7 +89,7 @@ std::ostream& operator<<(std::ostream& oss, const XrViewConfigurationView& rView
 {
 	oss << rView.recommendedImageRectWidth << " * " << rView.recommendedImageRectHeight
 		<< " (MAX: " << rView.maxImageRectWidth << " * " << rView.maxImageRectHeight << ")"
-		<< " [Swap chain: " << rView.recommendedSwapchainSampleCount << "(" << rView.maxSwapchainSampleCount << ")]";
+		<< " [sample: " << rView.recommendedSwapchainSampleCount << "(" << rView.maxSwapchainSampleCount << ")]";
 	return oss;
 }
 #pragma endregion
