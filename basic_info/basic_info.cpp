@@ -208,7 +208,7 @@ int main(int argc, char** argv)
 			{
 				vSysId.push_back(mSysId);
 				std::cout << "   > get system information" << std::endl;
-				XrSystemProperties mSysProp{ XR_TYPE_SYSTEM_GET_INFO };
+				XrSystemProperties mSysProp{ XR_TYPE_SYSTEM_PROPERTIES };
 				if (xrWORK(xrGetSystemProperties(gInstance, mSysId, &mSysProp)))
 				{
 					std::cout << "    - " << mSysProp.systemName << " (" << mSysProp.vendorId << ")\n";
