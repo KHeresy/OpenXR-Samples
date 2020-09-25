@@ -11,12 +11,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="basic_info.cpp" />
+    <ClCompile Include="glutCube.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{464c474b-a1f9-4c0d-abc4-447e6ccbe99a}</ProjectGuid>
+    <ProjectGuid>{CF58DA5B-1291-4E35-919C-830BB03A5D30}</ProjectGuid>
     <RootNamespace>test</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
