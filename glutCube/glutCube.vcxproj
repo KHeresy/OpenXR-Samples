@@ -13,6 +13,9 @@
   <ItemGroup>
     <ClCompile Include="glutCube.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="OpenXRGL.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
