@@ -65,11 +65,23 @@ public:
 		return false;
 	}
 
+	bool beginSession()
+	{
+		XrSessionBeginInfo sbi{ XR_TYPE_SESSION_BEGIN_INFO, nullptr, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO };
+		return check(xrBeginSession(m_xrSession, &sbi), "xrBeginSession");
+	}
+
+	bool endSession()
+	{
+		return check(xrEndSession(m_xrSession), "xrEndSession");
+	}
+
 	void processEvent()
 	{
 		while (true) {
-			XrEventDataBuffer eventBuffer;
+			XrEventDataBuffer eventBuffer{ XR_TYPE_EVENT_DATA_BUFFER };
 			auto pollResult = xrPollEvent(m_xrInstance, &eventBuffer);
+			//check(pollResult, "xrPollEvent");
 			if (pollResult == XR_EVENT_UNAVAILABLE) {
 				break;
 			}
@@ -80,14 +92,11 @@ public:
 				m_xrState = reinterpret_cast<XrEventDataSessionStateChanged&>(eventBuffer).state;
 				switch (m_xrState) {
 				case XR_SESSION_STATE_READY:
-				{
-					XrSessionBeginInfo sbi{ XR_TYPE_SESSION_BEGIN_INFO, nullptr, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO };
-					check(xrBeginSession(m_xrSession, &sbi), "xrBeginSession");
-				}
-				break;
+					beginSession();
+					break;
 
 				case XR_SESSION_STATE_STOPPING:
-					xrEndSession(m_xrSession);
+					endSession();
 					break;
 				}
 			}
@@ -126,9 +135,9 @@ public:
 					XrViewLocateInfo vi{ XR_TYPE_VIEW_LOCATE_INFO, nullptr, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, frameState.predictedDisplayTime, m_xrSpace };
 
 					uint32_t eyeViewStateCount = 0;
-					check(xrLocateViews(m_xrSession, &vi, &vs, eyeViewStateCount, &eyeViewStateCount, nullptr),"xrLocateViews");
-					eyeViewStates.resize(eyeViewStateCount);
-					check(xrLocateViews(m_xrSession, &vi, &vs, eyeViewStateCount, &eyeViewStateCount, eyeViewStates.data()),"xrLocateViews");
+					check(xrLocateViews(m_xrSession, &vi, &vs, eyeViewStateCount, &eyeViewStateCount, nullptr),"xrLocateViews-1");
+					eyeViewStates.resize(eyeViewStateCount, { XR_TYPE_VIEW });
+					check(xrLocateViews(m_xrSession, &vi, &vs, eyeViewStateCount, &eyeViewStateCount, eyeViewStates.data()),"xrLocateViews-2");
 
 					for (int i = 0; i < eyeViewStates.size(); ++i)
 					{

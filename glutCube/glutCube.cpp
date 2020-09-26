@@ -106,7 +106,6 @@ int main(int argc, char** argv)
 	#pragma endregion
 
 	gXRGL.init();
-	#pragma endregion
 
 	glutMainLoop();
 	return 0;
