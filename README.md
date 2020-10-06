@@ -11,6 +11,7 @@ My blog document (in Traditional Chinese):
 
 - basic_info
   - A simple console programe to get OpenXR related information, no graphics.
+  - [OpenXR 程式開發：初始環境設定](https://kheresy.wordpress.com/2020/07/16/openxr-env-init/)
 - glutCube
   - Basic OpenGL sample without interaction. (only work with SteamVR)
 
