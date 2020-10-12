@@ -38,7 +38,7 @@ public:
 			createReferenceSpace() &&
 			checkViewConfiguration() &&
 			createSwapChain() &&
-			prepareCompositionLayer() )
+			prepareCompositionLayer())
 		{
 			return createFrameBubber();
 		}
@@ -50,7 +50,7 @@ public:
 		for (auto& rVData : m_vViewDatas)
 			glDeleteFramebuffers(1, &rVData.m_glFrameBuffer);
 
-		check(xrDestroyInstance(m_xrInstance),"xrDestroyInstance");
+		check(xrDestroyInstance(m_xrInstance), "xrDestroyInstance");
 	}
 
 	bool useExtension(const char* sExtName)
@@ -111,33 +111,33 @@ public:
 	template<typename FUNC_DRAW>
 	void draw(FUNC_DRAW func_draw)
 	{
-		XrFrameState frameState{ XR_TYPE_FRAME_STATE };
-
-		XrFrameWaitInfo frameWaitInfo{ XR_TYPE_FRAME_WAIT_INFO, nullptr };
 		switch (m_xrState) {
 		case XR_SESSION_STATE_READY:
 		case XR_SESSION_STATE_FOCUSED:
 		case XR_SESSION_STATE_SYNCHRONIZED:
 		case XR_SESSION_STATE_VISIBLE:
+		{
+			XrFrameState frameState{ XR_TYPE_FRAME_STATE };
+			XrFrameWaitInfo frameWaitInfo{ XR_TYPE_FRAME_WAIT_INFO, nullptr };
 			if (XR_UNQUALIFIED_SUCCESS(xrWaitFrame(m_xrSession, &frameWaitInfo, &frameState)))
 			{
 				uint32_t	uWidth = m_vViews[0].maxImageRectWidth,
-							uHeight = m_vViews[0].maxImageRectHeight;
+					uHeight = m_vViews[0].maxImageRectHeight;
 
 				XrFrameBeginInfo frameBeginInfo{ XR_TYPE_FRAME_BEGIN_INFO };
-				check(xrBeginFrame(m_xrSession, &frameBeginInfo),"xrBeginFrame");
+				check(xrBeginFrame(m_xrSession, &frameBeginInfo), "xrBeginFrame");
 
 				// Update views
-				std::vector<XrView> eyeViewStates;
 				if (frameState.shouldRender)
 				{
 					XrViewState vs{ XR_TYPE_VIEW_STATE };
 					XrViewLocateInfo vi{ XR_TYPE_VIEW_LOCATE_INFO, nullptr, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, frameState.predictedDisplayTime, m_xrSpace };
 
 					uint32_t eyeViewStateCount = 0;
-					check(xrLocateViews(m_xrSession, &vi, &vs, eyeViewStateCount, &eyeViewStateCount, nullptr),"xrLocateViews-1");
+					std::vector<XrView> eyeViewStates;
+					check(xrLocateViews(m_xrSession, &vi, &vs, eyeViewStateCount, &eyeViewStateCount, nullptr), "xrLocateViews-1");
 					eyeViewStates.resize(eyeViewStateCount, { XR_TYPE_VIEW });
-					check(xrLocateViews(m_xrSession, &vi, &vs, eyeViewStateCount, &eyeViewStateCount, eyeViewStates.data()),"xrLocateViews-2");
+					check(xrLocateViews(m_xrSession, &vi, &vs, eyeViewStateCount, &eyeViewStateCount, eyeViewStates.data()), "xrLocateViews-2");
 
 					for (int i = 0; i < eyeViewStates.size(); ++i)
 					{
@@ -148,10 +148,10 @@ public:
 						uint32_t swapchainIndex;
 
 						XrSwapchainImageAcquireInfo ai{ XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO, nullptr };
-						check(xrAcquireSwapchainImage(m_vViewDatas[i].m_xrSwapChain, &ai, &swapchainIndex),"xrAcquireSwapchainImage");
+						check(xrAcquireSwapchainImage(m_vViewDatas[i].m_xrSwapChain, &ai, &swapchainIndex), "xrAcquireSwapchainImage");
 
 						XrSwapchainImageWaitInfo wi{ XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO, nullptr, XR_INFINITE_DURATION };
-						check(xrWaitSwapchainImage(m_vViewDatas[i].m_xrSwapChain, &wi),"xrWaitSwapchainImage");
+						check(xrWaitSwapchainImage(m_vViewDatas[i].m_xrSwapChain, &wi), "xrWaitSwapchainImage");
 
 						{
 							glViewport(0, 0, uWidth, uHeight);
@@ -169,7 +169,7 @@ public:
 						}
 
 						XrSwapchainImageReleaseInfo ri{ XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO, nullptr };
-						check(xrReleaseSwapchainImage(m_vViewDatas[i].m_xrSwapChain, &ri),"xrReleaseSwapchainImage");
+						check(xrReleaseSwapchainImage(m_vViewDatas[i].m_xrSwapChain, &ri), "xrReleaseSwapchainImage");
 					}
 
 					glBlitNamedFramebuffer(m_vViewDatas[0].m_glFrameBuffer, // backbuffer
@@ -193,8 +193,10 @@ public:
 					frameEndInfo.layers = m_vLayersPointers.data();
 				}
 
-				check(xrEndFrame(m_xrSession, &frameEndInfo),"xrEndFrame");
+				check(xrEndFrame(m_xrSession, &frameEndInfo), "xrEndFrame");
 			}
+			break;
+		}
 
 		default:
 			break;
@@ -229,7 +231,7 @@ protected:
 		if (check(xrEnumerateApiLayerProperties(0, &uAPILayerNum, nullptr), "xrEnumerateApiLayerProperties-1") && uAPILayerNum > 0)
 		{
 			m_vSupportedApiLayers.resize(uAPILayerNum, { XR_TYPE_API_LAYER_PROPERTIES });
-			check(xrEnumerateApiLayerProperties(uAPILayerNum, &uAPILayerNum, m_vSupportedApiLayers.data()),"xrEnumerateApiLayerProperties-2");
+			check(xrEnumerateApiLayerProperties(uAPILayerNum, &uAPILayerNum, m_vSupportedApiLayers.data()), "xrEnumerateApiLayerProperties-2");
 		}
 	}
 
@@ -272,13 +274,13 @@ protected:
 		// Magic code block....
 		// link error if call xrGetOpenGLGraphicsRequirementsKHR() directlly
 		PFN_xrGetOpenGLGraphicsRequirementsKHR func;
-		if (check(xrGetInstanceProcAddr(m_xrInstance, "xrGetOpenGLGraphicsRequirementsKHR", (PFN_xrVoidFunction*)&func),"xrGetInstanceProcAddr"))
+		if (check(xrGetInstanceProcAddr(m_xrInstance, "xrGetOpenGLGraphicsRequirementsKHR", (PFN_xrVoidFunction*)&func), "xrGetInstanceProcAddr"))
 		{
-			if (check(func(m_xrInstance, m_xrSystem, &reqOpenGL),"PFN_xrGetOpenGLGraphicsRequirementsKHR"))
+			if (check(func(m_xrInstance, m_xrSystem, &reqOpenGL), "PFN_xrGetOpenGLGraphicsRequirementsKHR"))
 			{
 				XrGraphicsBindingOpenGLWin32KHR gbOpenGL{ XR_TYPE_GRAPHICS_BINDING_OPENGL_WIN32_KHR , nullptr, wglGetCurrentDC(), wglGetCurrentContext() };
 				XrSessionCreateInfo infoSession{ XR_TYPE_SESSION_CREATE_INFO, &gbOpenGL, 0, m_xrSystem };
-				return check(xrCreateSession(m_xrInstance, &infoSession, &m_xrSession),"xrCreateSession");
+				return check(xrCreateSession(m_xrInstance, &infoSession, &m_xrSession), "xrCreateSession");
 			}
 		}
 		return false;
@@ -287,11 +289,11 @@ protected:
 	bool checkViewConfiguration()
 	{
 		uint32_t uViewsNum = 0;
-		if (check(xrEnumerateViewConfigurationViews(m_xrInstance, m_xrSystem, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, 0, &uViewsNum, nullptr),"xrEnumerateViewConfigurationViews-1") && uViewsNum > 0)
+		if (check(xrEnumerateViewConfigurationViews(m_xrInstance, m_xrSystem, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, 0, &uViewsNum, nullptr), "xrEnumerateViewConfigurationViews-1") && uViewsNum > 0)
 		{
 			m_vViews.resize(uViewsNum, { XR_TYPE_VIEW_CONFIGURATION_VIEW });
 			m_vViewDatas.resize(uViewsNum);
-			return check(xrEnumerateViewConfigurationViews(m_xrInstance, m_xrSystem, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, uViewsNum, &uViewsNum, m_vViews.data()),"xrEnumerateViewConfigurationViews-2");
+			return check(xrEnumerateViewConfigurationViews(m_xrInstance, m_xrSystem, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, uViewsNum, &uViewsNum, m_vViews.data()), "xrEnumerateViewConfigurationViews-2");
 		}
 
 		return false;
@@ -315,13 +317,13 @@ protected:
 		bool bOK = true;
 		for (auto& rVData : m_vViewDatas)
 		{
-			if (check(xrCreateSwapchain(m_xrSession, &infoSwapchain, &rVData.m_xrSwapChain),"xrCreateSwapchain"))
+			if (check(xrCreateSwapchain(m_xrSession, &infoSwapchain, &rVData.m_xrSwapChain), "xrCreateSwapchain"))
 			{
 				uint32_t uSwapchainNum = 0;
-				if (check(xrEnumerateSwapchainImages(rVData.m_xrSwapChain, uSwapchainNum, &uSwapchainNum, nullptr),"xrEnumerateSwapchainImages-1") && uSwapchainNum > 0)
+				if (check(xrEnumerateSwapchainImages(rVData.m_xrSwapChain, uSwapchainNum, &uSwapchainNum, nullptr), "xrEnumerateSwapchainImages-1") && uSwapchainNum > 0)
 				{
 					rVData.m_vSwapchainImages.resize(uSwapchainNum, { XR_TYPE_SWAPCHAIN_IMAGE_OPENGL_KHR });
-					if (!check(xrEnumerateSwapchainImages(rVData.m_xrSwapChain, uSwapchainNum, &uSwapchainNum, (XrSwapchainImageBaseHeader*)rVData.m_vSwapchainImages.data()),"xrEnumerateSwapchainImages-2"))
+					if (!check(xrEnumerateSwapchainImages(rVData.m_xrSwapChain, uSwapchainNum, &uSwapchainNum, (XrSwapchainImageBaseHeader*)rVData.m_vSwapchainImages.data()), "xrEnumerateSwapchainImages-2"))
 					{
 						bOK = false;
 						break;
@@ -363,7 +365,7 @@ protected:
 			m_vProjectionLayerViews[i].subImage.imageRect.extent = { (int32_t)m_vViews[0].recommendedImageRectWidth, (int32_t)m_vViews[0].recommendedImageRectHeight };
 		}
 
-		XrCompositionLayerProjection* pProjectionLayer = new XrCompositionLayerProjection{ XR_TYPE_COMPOSITION_LAYER_PROJECTION, nullptr, 0, m_xrSpace,(uint32_t) m_vProjectionLayerViews.size(), m_vProjectionLayerViews.data() };
+		XrCompositionLayerProjection* pProjectionLayer = new XrCompositionLayerProjection{ XR_TYPE_COMPOSITION_LAYER_PROJECTION, nullptr, 0, m_xrSpace,(uint32_t)m_vProjectionLayerViews.size(), m_vProjectionLayerViews.data() };
 		m_vLayersPointers.push_back((XrCompositionLayerBaseHeader*)pProjectionLayer);
 
 		return true;
@@ -386,7 +388,7 @@ protected:
 
 		const float tanAngleWidth = tanAngleRight - tanAngleLeft;
 		const float tanAngleHeight = tanAngleUp - tanAngleDown;
-		
+
 		TMatrix matProjection;
 		matProjection[0] = 2 / tanAngleWidth;
 		matProjection[4] = 0;
@@ -472,7 +474,7 @@ protected:
 			matTranslate[15] = 1.0f;
 		}
 
-		TMatrix matRes = [](const TMatrix&a, const TMatrix& b) {
+		TMatrix matRes = [](const TMatrix& a, const TMatrix& b) {
 			TMatrix matResult;
 			matResult[0] = a[0] * b[0] + a[4] * b[1] + a[8] * b[2] + a[12] * b[3];
 			matResult[1] = a[1] * b[0] + a[5] * b[1] + a[9] * b[2] + a[13] * b[3];
@@ -531,7 +533,7 @@ protected:
 	std::vector<XrExtensionProperties>		m_vSupportedExtensions;
 	std::vector<XrViewConfigurationView>	m_vViews;
 	std::vector<SViewData>					m_vViewDatas;
-	
+
 	std::vector<XrCompositionLayerProjectionView>	m_vProjectionLayerViews;
 	std::vector<XrCompositionLayerBaseHeader*>		m_vLayersPointers;
 
