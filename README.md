@@ -14,6 +14,8 @@ My blog document (in Traditional Chinese):
   - [OpenXR 程式開發：初始環境設定](https://kheresy.wordpress.com/2020/07/16/openxr-env-init/)
 - glutCube
   - Basic OpenGL sample without interaction. (only work with SteamVR)
+  - [OpenXR 程式開發：簡單的顯示架構（part 1）](https://kheresy.wordpress.com/2020/10/07/simple-view-with-openxr-p1/)
+  - [OpenXR 程式開發：簡單的顯示架構（part 2）](https://kheresy.wordpress.com/2020/10/13/openxr-simplay-display-p2/)
 
 ## 3rd Party libraries
 
